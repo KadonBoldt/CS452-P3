@@ -42,7 +42,10 @@ size_t btok(size_t bytes)
 
 struct avail *buddy_calc(struct buddy_pool *pool, struct avail *buddy)
 {
-
+    uintptr_t base = (uintptr_t)pool->base;
+    uintptr_t offset = (uintptr_t)buddy - base;
+    uintptr_t buddy_offset = offset ^ (1ULL << buddy->kval);
+    return (struct avail *)(base + buddy_offset);
 }
 
 void *buddy_malloc(struct buddy_pool *pool, size_t size)
