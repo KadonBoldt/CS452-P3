@@ -31,7 +31,13 @@
  */
 size_t btok(size_t bytes)
 {
-    //DO NOT use math.pow
+    size_t k = 0;
+    size_t bin = 0b1;
+    while (bin < bytes) {
+        bin <<= 1;
+        k++;
+    }
+    return k;
 }
 
 struct avail *buddy_calc(struct buddy_pool *pool, struct avail *buddy)
