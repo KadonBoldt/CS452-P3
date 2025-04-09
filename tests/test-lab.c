@@ -213,7 +213,7 @@ void test_buddy_malloc_exhaustion(void)
   void *d = buddy_malloc(&pool, 1);
 
   for (size_t i = SMALLEST_K; i <= pool.kval_m; i++) {
-    fprintf(stderr, "K: %ld, Tag code: %d\n", i, pool.avail[i].tag);
+    fprintf(stderr, "K: %ld, Tag code: %d\n", i, pool.avail[i].next->tag);
   }
 
   void *e = buddy_malloc(&pool, 1); // should fail
