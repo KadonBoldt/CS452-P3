@@ -31,13 +31,13 @@
  */
 size_t btok(size_t bytes)
 {
-    size_t k = 0;
-    size_t bin = 0b1;
-    while (bin < bytes) {
-        bin <<= 1;
-        k++;
+    size_t kval = 0;
+    size_t bytes_ceil = 1U;
+    while (bytes_ceil < bytes) { // Gets the power of 2 ceiling of bytes while increasing kval
+        bytes_ceil <<= 1; // Bit shift for bytes_ciel *= 2
+        kval++;
     }
-    return k;
+    return kval;
 }
 
 struct avail *buddy_calc(struct buddy_pool *pool, struct avail *buddy)
@@ -50,8 +50,12 @@ struct avail *buddy_calc(struct buddy_pool *pool, struct avail *buddy)
 
 void *buddy_malloc(struct buddy_pool *pool, size_t size)
 {
+    if (!pool || size == 0) return NULL;
 
     //get the kval for the requested size with enough room for the tag and kval fields
+    size_t required_size = size + sizeof(avail);
+    size_t kval = btok(required_size);
+    if (kval < SMALLEST_K) kval = SMALLEST_K;
 
     //R1 Find a block
 
