@@ -1,6 +1,6 @@
 # Project 3: Buddy Allocator
-### CS-452: Operating Systems
-### Kadon Boldt
+#### CS-452: Operating Systems
+#### Kadon Boldt
 
 Steps to configure, build, run, and test the project.
 
