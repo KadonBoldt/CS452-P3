@@ -184,7 +184,7 @@ void test_buddy_min_block_size(void)
 {
   fprintf(stderr, "->Testing minimum block size allocation\n");
   struct buddy_pool pool;
-  buddy_init(&pool, UINT64_C(1) << SMALLEST_K);
+  buddy_init(&pool, UINT64_C(1) << MIN_K);
 
   void *mem = buddy_malloc(&pool, 1);
   assert(mem != NULL);
@@ -199,30 +199,21 @@ void test_buddy_min_block_size(void)
 }
 
 /**
- * Test allocation exhaustion and recovery after free.
+ * Test allocation exhaustion and recovery after free using big blocks.
  */
 void test_buddy_malloc_exhaustion(void)
 {
-  fprintf(stderr, "->Testing allocation exhaustion and recovery\n");
+  fprintf(stderr, "->Testing allocation exhaustion with larger blocks\n");
+
   struct buddy_pool pool;
-  buddy_init(&pool, UINT64_C(1) << (SMALLEST_K + 2)); // 4 blocks
+  buddy_init(&pool, UINT64_C(1) << MIN_K);
 
-  void *a = buddy_malloc(&pool, 1);
-  void *b = buddy_malloc(&pool, 1);
-  void *c = buddy_malloc(&pool, 1);
-  void *d = buddy_malloc(&pool, 1);
-
-  fprintf(stderr, "BEFORE FIFTH\n");
-  for (size_t i = SMALLEST_K; i <= pool.kval_m; i++) {
-    fprintf(stderr, "K: %ld, Tag code: %d\n", i, pool.avail[i].next->tag);
-  }
-
-  void *e = buddy_malloc(&pool, 1); // should fail
-
-  fprintf(stderr, "AFTER FIFTH\n");
-  for (size_t i = SMALLEST_K; i <= pool.kval_m; i++) {
-    fprintf(stderr, "K: %ld, Tag code: %d\n", i, pool.avail[i].next->tag);
-  }
+  size_t big_block_size = (UINT64_C(1) << (MIN_K - 2));
+  void *a = buddy_malloc(&pool, big_block_size - sizeof(struct avail));
+  void *b = buddy_malloc(&pool, big_block_size - sizeof(struct avail));
+  void *c = buddy_malloc(&pool, big_block_size - sizeof(struct avail));
+  void *d = buddy_malloc(&pool, big_block_size - sizeof(struct avail));
+  void *e = buddy_malloc(&pool, big_block_size - sizeof(struct avail)); // should fail
 
   assert(a != NULL);
   assert(b != NULL);
@@ -237,7 +228,6 @@ void test_buddy_malloc_exhaustion(void)
   buddy_free(&pool, d);
 
   check_buddy_pool_full(&pool);
-
   buddy_destroy(&pool);
 }
 
@@ -247,17 +237,22 @@ void test_buddy_malloc_exhaustion(void)
 void test_buddy_fragmentation_stress(void)
 {
   fprintf(stderr, "->Testing fragmentation and coalescing under stress\n");
-  struct buddy_pool pool;
-  buddy_init(&pool, UINT64_C(1) << (SMALLEST_K + 3)); // 8 small blocks
 
-  void *blocks[8];
-  for (int i = 0; i < 8; i++) {
-    blocks[i] = buddy_malloc(&pool, 1);
+  struct buddy_pool pool;
+  buddy_init(&pool, UINT64_C(1) << MIN_K);  // 1 MiB pool
+
+  size_t block_size = (UINT64_C(1) << (MIN_K - 4)); // 64 KiB blocks
+  const int N = 16;  // 16 * 64 KiB = 1024 KiB = 1 MiB total
+
+  void *blocks[N];
+  for (int i = 0; i < N; i++) {
+    blocks[i] = buddy_malloc(&pool, block_size - sizeof(struct avail));
     assert(blocks[i] != NULL);
   }
 
-  int order[] = {1, 0, 3, 2, 5, 4, 7, 6};
-  for (int i = 0; i < 8; i++) {
+  // Free in scrambled order to simulate fragmentation
+  int order[] = {1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14};
+  for (int i = 0; i < N; i++) {
     buddy_free(&pool, blocks[order[i]]);
   }
 
