@@ -130,8 +130,8 @@ void buddy_free(struct buddy_pool *pool, void *ptr)
     block->tag = BLOCK_AVAIL;
     block->next = pool->avail[kval].next;
     block->prev = &pool->avail[kval];
-    pool->avail[k].next->prev = block;
-    pool->avail[k].next = block;
+    pool->avail[kval].next->prev = block;
+    pool->avail[kval].next = block;
 }
 
 // Unimplemented method
