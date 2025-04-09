@@ -52,13 +52,13 @@ void *buddy_malloc(struct buddy_pool *pool, size_t size)
     if (!pool || size == 0) return NULL;
 
     // Add room for an availability block and get the k value
-    size_t required_size = size + sizeof(avail);
+    size_t required_size = size + sizeof(struct avail);
     size_t kval = btok(required_size);
     if (kval < SMALLEST_K) kval = SMALLEST_K;
 
     // Search for available block
     size_t block_k;
-    while (block_k <= pool->kval_m && pool->avail[i].next == &pool->avail[i]) block_k++;
+    while (block_k <= pool->kval_m && pool->avail[block_k].next == &pool->avail[block_k]) block_k++;
 
     // No memory block found, set no memory error
     if (block_k > pool->kval_m)
@@ -113,7 +113,7 @@ void buddy_free(struct buddy_pool *pool, void *ptr)
         struct avail* buddy = buddy_calc(pool, block);
 
         // No available buddy found
-        if (buddy->tag != BLOCK_AVAIL || buddy->kval != k) break;
+        if (buddy->tag != BLOCK_AVAIL || buddy->kval != kval) break;
 
         // Remove buddy from list
         buddy->prev->next = buddy->next;
@@ -134,11 +134,8 @@ void buddy_free(struct buddy_pool *pool, void *ptr)
     pool->avail[k].next = block;
 }
 
-void *buddy_realloc(struct buddy_pool *pool, void *ptr, size_t size)
-{
-    // Unimplemented
-    return (void *)pool->base;
-}
+// Unimplemented method
+// void *buddy_realloc(struct buddy_pool *pool, void *ptr, size_t size) {}
 
 void buddy_init(struct buddy_pool *pool, size_t size)
 {
@@ -202,24 +199,24 @@ void buddy_destroy(struct buddy_pool *pool)
 
 #define UNUSED(x) (void)x
 
-/**
- * This function can be useful to visualize the bits in a block. This can
- * help when figuring out the buddy_calc function!
- */
-static void printb(unsigned long int b)
-{
-     size_t bits = sizeof(b) * 8;
-     unsigned long int curr = UINT64_C(1) << (bits - 1);
-     for (size_t i = 0; i < bits; i++)
-     {
-          if (b & curr)
-          {
-               printf("1");
-          }
-          else
-          {
-               printf("0");
-          }
-          curr >>= 1L;
-     }
-}
+// /**
+//  * This function can be useful to visualize the bits in a block. This can
+//  * help when figuring out the buddy_calc function!
+//  */
+// static void printb(unsigned long int b)
+// {
+//      size_t bits = sizeof(b) * 8;
+//      unsigned long int curr = UINT64_C(1) << (bits - 1);
+//      for (size_t i = 0; i < bits; i++)
+//      {
+//           if (b & curr)
+//           {
+//                printf("1");
+//           }
+//           else
+//           {
+//                printf("0");
+//           }
+//           curr >>= 1L;
+//      }
+// }
