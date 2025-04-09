@@ -23,19 +23,16 @@
         raise(SIGKILL);          \
     } while (0)
 
-/**
- * @brief Convert bytes to the correct K value
- *
- * @param bytes the number of bytes
- * @return size_t the K value that will fit bytes
- */
 size_t btok(size_t bytes)
 {
     size_t kval = 0;
     size_t bytes_ceil = 1U;
-    while (bytes_ceil < bytes) // Gets the power of 2 ceiling of bytes while increasing kval
+
+    // Gets the power of 2 ceiling of bytes while increasing kval
+    while (bytes_ceil < bytes)
     {
-        bytes_ceil <<= 1; // Bit shift for bytes_ciel *= 2
+        // Bit shift for bytes_ciel *= 2
+        bytes_ceil <<= 1;
         kval++;
     }
     return kval;
@@ -45,34 +42,56 @@ struct avail *buddy_calc(struct buddy_pool *pool, struct avail *buddy)
 {
     uintptr_t base = (uintptr_t)pool->base;
     uintptr_t offset = (uintptr_t)buddy - base;
+    // Flip the k-th bit to find the buddy
     uintptr_t buddy_offset = offset ^ (1ULL << buddy->kval);
-    return (struct avail *)(base + buddy_offset);
+    return (struct avail*)(base + buddy_offset);
 }
 
 void *buddy_malloc(struct buddy_pool *pool, size_t size)
 {
     if (!pool || size == 0) return NULL;
 
-    //get the kval for the requested size with enough room for the tag and kval fields
+    // Add room for an availability block and get the k value
     size_t required_size = size + sizeof(avail);
     size_t kval = btok(required_size);
     if (kval < SMALLEST_K) kval = SMALLEST_K;
 
-    //R1 Find a block
-    for (int i = kval; i <= pool->kval_m; i++)
-    {
+    // Search for available block
+    size_t block_k;
+    while (block_k <= pool->kval_m && pool->avail[i].next == &pool->avail[i]) block_k++;
 
+    // No memory block found, set no memory error
+    if (block_k > pool->kval_m)
+    {
+        errno = ENOMEM;
+        return NULL;
     }
 
+    // Remove block from availability list
+    struct avail* block = pool->avail[block_k].next;
+    block->prev->next = block->next;
+    block->next->prev = block->prev;
 
-    //There was not enough memory to satisfy the request thus we need to set error and return NULL
+    // Split until block is correct size
+    while (block_k > kval)
+    {
+        block_k--;
 
-    //R2 Remove from list;
+        struct avail* buddy = buddy_calc(pool, block);
+        buddy->tag = BLOCK_AVAIL;
+        buddy->kval = block_k;
+        buddy->next = pool->avail[block_k].next;
+        buddy->prev = &pool->avail[block_k];
 
-    //R3 Split required?
+        pool->avail[block_k].next->prev = buddy;
+        pool->avail[block_k].next = buddy;
+    }
 
-    //R4 Split the block
+    // Set block values
+    block->kval = block_k;
+    block->tag = BLOCK_RESERVED;
 
+    return (void *)(block + 1);
 }
 
 void buddy_free(struct buddy_pool *pool, void *ptr)
@@ -80,18 +99,9 @@ void buddy_free(struct buddy_pool *pool, void *ptr)
 
 }
 
-/**
- * @brief This is a simple version of realloc.
- *
- * @param poolThe memory pool
- * @param ptr  The user memory
- * @param size the new size requested
- * @return void* pointer to the new user memory
- */
 void *buddy_realloc(struct buddy_pool *pool, void *ptr, size_t size)
 {
-    //Required for Grad Students
-    //Optional for Undergrad Students
+    return (void *)pool->base;
 }
 
 void buddy_init(struct buddy_pool *pool, size_t size)
