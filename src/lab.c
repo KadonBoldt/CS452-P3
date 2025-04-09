@@ -33,7 +33,8 @@ size_t btok(size_t bytes)
 {
     size_t kval = 0;
     size_t bytes_ceil = 1U;
-    while (bytes_ceil < bytes) { // Gets the power of 2 ceiling of bytes while increasing kval
+    while (bytes_ceil < bytes) // Gets the power of 2 ceiling of bytes while increasing kval
+    {
         bytes_ceil <<= 1; // Bit shift for bytes_ciel *= 2
         kval++;
     }
@@ -58,6 +59,11 @@ void *buddy_malloc(struct buddy_pool *pool, size_t size)
     if (kval < SMALLEST_K) kval = SMALLEST_K;
 
     //R1 Find a block
+    for (int i = kval; i <= pool->kval_m; i++)
+    {
+
+    }
+
 
     //There was not enough memory to satisfy the request thus we need to set error and return NULL
 
