@@ -57,7 +57,7 @@ void *buddy_malloc(struct buddy_pool *pool, size_t size)
     if (kval < SMALLEST_K) kval = SMALLEST_K;
 
     // Search for available block
-    size_t block_k;
+    size_t block_k = kval;
     while (block_k <= pool->kval_m && pool->avail[block_k].next == &pool->avail[block_k]) block_k++;
 
     // No memory block found, set no memory error
