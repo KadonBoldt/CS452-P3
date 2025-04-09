@@ -75,6 +75,7 @@ void test_buddy_malloc_one_byte(void)
   void *mem = buddy_malloc(&pool, 1);
   //Make sure correct kval was allocated
   buddy_free(&pool, mem);
+  printb(pool->base);
   check_buddy_pool_full(&pool);
   buddy_destroy(&pool);
 }
@@ -105,7 +106,7 @@ void test_buddy_malloc_one_large(void)
   //Verify that a call on an empty tool fails as expected and errno is set to ENOMEM.
   void *fail = buddy_malloc(&pool, 5);
   assert(fail == NULL);
-  assert(errno = ENOMEM);
+  assert(errno == ENOMEM);
 
   //Free the memory and then check to make sure everything is OK
   buddy_free(&pool, mem);
