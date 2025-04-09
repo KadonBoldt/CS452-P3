@@ -76,6 +76,7 @@ void *buddy_malloc(struct buddy_pool *pool, size_t size)
     while (block_k > kval)
     {
         block_k--;
+        block->kval = block_k;
 
         // Create buddy
         struct avail* buddy = buddy_calc(pool, block);
@@ -87,8 +88,6 @@ void *buddy_malloc(struct buddy_pool *pool, size_t size)
         // Add buddy to available pool
         pool->avail[block_k].next->prev = buddy;
         pool->avail[block_k].next = buddy;
-
-        block->kval = block_k;
     }
 
     // Reserve block
@@ -199,24 +198,24 @@ void buddy_destroy(struct buddy_pool *pool)
 
 #define UNUSED(x) (void)x
 
-/**
- * This function can be useful to visualize the bits in a block. This can
- * help when figuring out the buddy_calc function!
- */
-static void printb(unsigned long int b)
-{
-     size_t bits = sizeof(b) * 8;
-     unsigned long int curr = UINT64_C(1) << (bits - 1);
-     for (size_t i = 0; i < bits; i++)
-     {
-          if (b & curr)
-          {
-               printf("1");
-          }
-          else
-          {
-               printf("0");
-          }
-          curr >>= 1L;
-     }
-}
+// /**
+//  * This function can be useful to visualize the bits in a block. This can
+//  * help when figuring out the buddy_calc function!
+//  */
+// static void printb(unsigned long int b)
+// {
+//      size_t bits = sizeof(b) * 8;
+//      unsigned long int curr = UINT64_C(1) << (bits - 1);
+//      for (size_t i = 0; i < bits; i++)
+//      {
+//           if (b & curr)
+//           {
+//                printf("1");
+//           }
+//           else
+//           {
+//                printf("0");
+//           }
+//           curr >>= 1L;
+//      }
+// }
