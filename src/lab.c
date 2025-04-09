@@ -77,18 +77,21 @@ void *buddy_malloc(struct buddy_pool *pool, size_t size)
     {
         block_k--;
 
+        // Create buddy
         struct avail* buddy = buddy_calc(pool, block);
         buddy->tag = BLOCK_AVAIL;
         buddy->kval = block_k;
         buddy->next = pool->avail[block_k].next;
         buddy->prev = &pool->avail[block_k];
 
+        // Add buddy to available pool
         pool->avail[block_k].next->prev = buddy;
         pool->avail[block_k].next = buddy;
+
+        block->kval = block_k;
     }
 
-    // Set block values
-    block->kval = block_k;
+    // Reserve block
     block->tag = BLOCK_RESERVED;
 
     return (void *)(block + 1);
@@ -96,11 +99,44 @@ void *buddy_malloc(struct buddy_pool *pool, size_t size)
 
 void buddy_free(struct buddy_pool *pool, void *ptr)
 {
+    if (ptr == NULL) return;
 
+    // Find availibility block and set it to available
+    struct avail* block = ((struct avail*)ptr) - 1;
+    block->tag = BLOCK_AVAIL;
+
+    // Combine buddies
+    size_t kval = block->kval;
+    while (kval < pool->kval_m)
+    {
+        // Find buddy
+        struct avail* buddy = buddy_calc(pool, block);
+
+        // No available buddy found
+        if (buddy->tag != BLOCK_AVAIL || buddy->kval != k) break;
+
+        // Remove buddy from list
+        buddy->prev->next = buddy->next;
+        buddy->next->prev = buddy->prev;
+
+        // Keep lower address of buddies
+        if (buddy < block) block = buddy;
+
+        kval++;
+        block->kval = kval;
+    }
+
+    // Add block to the available list
+    block->tag = BLOCK_AVAIL;
+    block->next = pool->avail[kval].next;
+    block->prev = &pool->avail[kval];
+    pool->avail[k].next->prev = block;
+    pool->avail[k].next = block;
 }
 
 void *buddy_realloc(struct buddy_pool *pool, void *ptr, size_t size)
 {
+    // Unimplemented
     return (void *)pool->base;
 }
 
