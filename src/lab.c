@@ -72,6 +72,11 @@ void *buddy_malloc(struct buddy_pool *pool, size_t size)
     block->prev->next = block->next;
     block->next->prev = block->prev;
 
+    // Peer review recommendation by Dylan, Tania, and Ahn
+    // Remove block's prev and next pointers to avoid potential malicious activity
+    block->next = NULL;
+    block->prev = NULL;
+
     // Split until block is correct size
     while (block_k > kval)
     {
